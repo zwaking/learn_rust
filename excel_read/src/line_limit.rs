@@ -9,13 +9,25 @@ pub struct L99Interface {
 }
 
 impl Default for L99Interface {
-    fn default() -> Self {
-        Self {
+    fn default() -> L99Interface {
+        L99Interface {
             id: Default::default(),
             path: Default::default(),
             l99_time: Default::default(),
             week: Default::default(),
             application: Default::default(),
+        }
+    }
+}
+
+impl Clone for L99Interface {
+    fn clone(&self) -> L99Interface {
+        L99Interface {
+            id: self.id,
+            path: self.path.to_string(),
+            l99_time: self.l99_time,
+            week: self.week,
+            application: self.application.to_string(),
         }
     }
 }
