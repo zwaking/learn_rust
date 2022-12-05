@@ -4,7 +4,7 @@ use log::{debug, error};
 use rusqlite::{params, Connection, Result};
 
 fn get_connection() -> Connection {
-    let conn = Connection::open("slow_interface.sqlite").unwrap();
+    let conn = Connection::open("slow_interface.db").unwrap();
     return conn;
 }
 
