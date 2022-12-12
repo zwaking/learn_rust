@@ -1,16 +1,20 @@
 mod helper_db;
 mod line_limit;
+mod helper_csv;
+mod helper_xlsx;
 
-use calamine::{open_workbook, Reader, Xlsx};
+use helper_csv::read_csv;
+use helper_xlsx::read_xlsx;
 use line_limit::{filter_timelimit, L99Interface};
 use log::{info, LevelFilter};
 use simplelog::*;
 
 use crate::helper_db::{check_exist, update};
 
-fn analyze_limit() {
-    let path = "C:/Users/waking/Downloads/adjustment-w47.xlsx";
+fn analyze_limit(path: &str, limit_second:f64) {
+    // 拆解文件名
     let path_split: Vec<&str> = path.split(&['/', '.', '-', 'w']).collect();
+    // 从文件名中获取week
     let mut week: usize = 0;
     if week == 0 {
         week = path_split
@@ -19,22 +23,16 @@ fn analyze_limit() {
             .parse::<usize>()
             .expect("提取week失败");
     }
-    let application = path_split.get(path_split.len() - 4).unwrap().to_string();
-    let limit_second = 2.0;
-    let limit_col_num: usize = 6;
-    // 打开文件
-    let mut _workbook: Xlsx<_> = open_workbook(path).expect("cannot open file!");
-    let sheet = _workbook
-        .worksheet_range_at(0)
-        .expect("未找到可用的sheet")
-        .unwrap();
-    let vec_timelimit = filter_timelimit(
-        sheet.rows(),
-        limit_col_num,
-        limit_second,
-        week,
-        application.as_str(),
-    );
+    // 从文件名中获取文件类型
+    let suffix = path_split.get(path_split.len() - 1).unwrap().to_string();
+    let interfece_vec;
+    if suffix == String::from("xlsx") {
+        interfece_vec = read_xlsx(path, week);
+    }else{
+        interfece_vec = read_csv(path, week);
+    }
+    let interfece_count = interfece_vec.len();
+    let vec_timelimit = filter_timelimit(limit_second, interfece_vec);
     let timelimit_count = vec_timelimit.len();
     let mut update_count: usize = 0;
 
@@ -78,7 +76,7 @@ fn analyze_limit() {
     }
     info!(
         "共{}个接口,超过阈值({}s)的接口{}个,插入{}条数据",
-        sheet.rows().len(),
+        interfece_count,
         limit_second,
         timelimit_count,
         update_count
@@ -96,5 +94,15 @@ fn main() {
     .unwrap();
 
     // 跑
-    analyze_limit();
+    let path = "C:/Users/waking/Downloads/w50.csv";
+    analyze_limit(path, 2.0);
+
+    // let path = "C:/Users/waking/Downloads/w50.csv";
+    // let l99_vec: Vec<L99Interface> = read_csv(path, 50);
+    // println!("{}",l99_vec.len());
+    // println!("{:?}",l99_vec);
+    // let path = "C:/Users/waking/Downloads/w50.xlsx";
+    // let l99_vec: Vec<L99Interface> = read_xlsx(path, 50);
+    // println!("{}",l99_vec.len());
+    // println!("{:?}",l99_vec);
 }
